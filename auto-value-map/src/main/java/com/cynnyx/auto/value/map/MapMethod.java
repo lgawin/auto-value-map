@@ -46,11 +46,29 @@ class MapMethod {
 
         builder.addStatement("$T<$T, $T> map = new $T<>()", Map.class, String.class, Object.class, HashMap.class);
         for (Property p : properties) {
-            builder.addStatement("map.put($S,$L())", p.humanName, p.methodName);
+            TypeName type = p.type;
+            String format = typeToFormat(type);
+            builder.addStatement(format, p.humanName, p.methodName);
         }
         builder.addStatement("return map");
 
         return builder.build();
+    }
+
+    private static String typeToFormat(TypeName type) {
+        return (isString(type)
+                || type.isPrimitive()
+                || type.isBoxedPrimitive())
+                ? "map.put($S,$L())"
+                : "map.put($S,$L().toMap())";
+    }
+
+    private static boolean isString(TypeName type) {
+        if (type instanceof ClassName) {
+            ClassName className = (ClassName) type;
+            return "String".equals(className.simpleName()) && "java.lang".equals(className.packageName());
+        }
+        return false;
     }
 
     static Set<ExecutableElement> filteredAbstractMethods(AutoValueExtension.Context context) {
