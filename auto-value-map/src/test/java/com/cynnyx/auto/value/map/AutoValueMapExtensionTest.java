@@ -19,10 +19,15 @@ package com.cynnyx.auto.value.map;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.truth.Truth;
 import com.google.testing.compile.JavaFileObjects;
-import javax.tools.JavaFileObject;
+
 import org.junit.Test;
 
+import java.util.Arrays;
+
+import javax.tools.JavaFileObject;
+
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class AutoValueMapExtensionTest {
 
@@ -295,6 +300,58 @@ public class AutoValueMapExtensionTest {
 
         Truth.assert_().about(javaSource())
                 .that(source)
+                .processedWith(new AutoValueProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(expected);
+    }
+
+    @Test
+    public void testNested() throws Exception {
+        JavaFileObject nested = JavaFileObjects.forSourceString("test.Nested",
+                "package test;\n"
+                        + "import java.util.Map;\n"
+                        + "import com.google.auto.value.AutoValue;\n"
+                        + "@AutoValue\n"
+                        + "public abstract class Nested {\n"
+                        + "    public abstract String name();\n"
+                        + "    public abstract String value();\n"
+                        + "    public abstract Map<String,Object> toMap();\n"
+                        + "}");
+
+        JavaFileObject complex = JavaFileObjects.forSourceString("test.Complex",
+                "package test;\n"
+                        + "import java.util.Map;\n"
+                        + "import com.google.auto.value.AutoValue;\n"
+                        + "@AutoValue\n"
+                        + "public abstract class Complex {\n"
+                        + "    public abstract Nested nested();\n"
+                        + "    public abstract Map<String,Object> toMap();\n"
+                        + "}");
+
+        JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Complex",
+                "package test;\n"
+                        + "\n"
+                        + "import java.lang.Object;\n"
+                        + "import java.lang.String;\n"
+                        + "import java.util.HashMap;\n"
+                        + "import java.util.Map;\n"
+                        + "\n"
+                        + "final class AutoValue_Complex extends $AutoValue_Complex {\n"
+                        + "  AutoValue_Complex(Nested nested) {\n"
+                        + "    super(nested);\n"
+                        + "  }\n"
+                        + "\n"
+                        + "  public Map toMap() {\n"
+                        + "    Map<String, Object> map = new HashMap<>();\n"
+                        + "    map.put(\"nested\",nested().toMap());\n"
+                        + "    return map;\n"
+                        + "  }\n"
+                        + "}");
+
+        Truth.assert_()
+                .about(javaSources())
+                .that(Arrays.asList(nested, complex))
                 .processedWith(new AutoValueProcessor())
                 .compilesWithoutError()
                 .and()
