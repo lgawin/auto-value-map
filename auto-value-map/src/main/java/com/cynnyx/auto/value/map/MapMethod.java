@@ -39,36 +39,19 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 class MapMethod {
     private static final String METHOD_NAME = "toMap";
 
-    static MethodSpec generateMethod(List<Property> properties) {
+    static MethodSpec generateMethod(List<Property> properties, Set<String> complexProperties) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(METHOD_NAME)
                 .addModifiers(PUBLIC)
                 .returns(Map.class);
 
         builder.addStatement("$T<$T, $T> map = new $T<>()", Map.class, String.class, Object.class, HashMap.class);
         for (Property p : properties) {
-            TypeName type = p.type;
-            String format = typeToFormat(type);
+            String format = complexProperties.contains(p.methodName) ? "map.put($S,$L().toMap())" : "map.put($S,$L())";
             builder.addStatement(format, p.humanName, p.methodName);
         }
         builder.addStatement("return map");
 
         return builder.build();
-    }
-
-    private static String typeToFormat(TypeName type) {
-        return (isString(type)
-                || type.isPrimitive()
-                || type.isBoxedPrimitive())
-                ? "map.put($S,$L())"
-                : "map.put($S,$L().toMap())";
-    }
-
-    private static boolean isString(TypeName type) {
-        if (type instanceof ClassName) {
-            ClassName className = (ClassName) type;
-            return "String".equals(className.simpleName()) && "java.lang".equals(className.packageName());
-        }
-        return false;
     }
 
     static Set<ExecutableElement> filteredAbstractMethods(AutoValueExtension.Context context) {

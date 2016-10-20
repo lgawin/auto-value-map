@@ -315,7 +315,8 @@ public class AutoValueMapExtensionTest {
                         + "@AutoValue\n"
                         + "public abstract class Nested {\n"
                         + "    public abstract String name();\n"
-                        + "    public abstract String value();\n"
+                        + "    public abstract int value();\n"
+                        + "    public abstract Integer value2();\n"
                         + "    public abstract Map<String,Object> toMap();\n"
                         + "}");
 
@@ -325,6 +326,10 @@ public class AutoValueMapExtensionTest {
                         + "import com.google.auto.value.AutoValue;\n"
                         + "@AutoValue\n"
                         + "public abstract class Complex {\n"
+                        + "    public enum SomeEnum {\n"
+                        + "        one, two\n"
+                        + "    }\n"
+                        + "    public abstract SomeEnum someEnum();\n"
                         + "    public abstract Nested nested();\n"
                         + "    public abstract Map<String,Object> toMap();\n"
                         + "}");
@@ -338,12 +343,13 @@ public class AutoValueMapExtensionTest {
                         + "import java.util.Map;\n"
                         + "\n"
                         + "final class AutoValue_Complex extends $AutoValue_Complex {\n"
-                        + "  AutoValue_Complex(Nested nested) {\n"
-                        + "    super(nested);\n"
+                        + "  AutoValue_Complex(Complex.SomeEnum someEnum, Nested nested) {\n"
+                        + "    super(someEnum, nested);\n"
                         + "  }\n"
                         + "\n"
                         + "  public Map toMap() {\n"
                         + "    Map<String, Object> map = new HashMap<>();\n"
+                        + "    map.put(\"someEnum\",someEnum());\n"
                         + "    map.put(\"nested\",nested().toMap());\n"
                         + "    return map;\n"
                         + "  }\n"
@@ -357,4 +363,6 @@ public class AutoValueMapExtensionTest {
                 .and()
                 .generatesSources(expected);
     }
+
+    // handle enum
 }
